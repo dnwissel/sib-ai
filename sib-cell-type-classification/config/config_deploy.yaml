@@ -37,7 +37,3 @@ doublet_column_deploy: ""
 doublet_value_deploy: ""
 gene_id_column_deploy: ""
 batch_column_deploy: ""
-
-master_tissue_column: "asap_tissue"
-master_gene_column: "gene_name"
-deploy_decide_gene_column: "index"

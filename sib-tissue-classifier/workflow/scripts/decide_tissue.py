@@ -3,9 +3,10 @@ import argparse
 import numpy as np
 import pandas as pd
 import scanpy
-from sklearn.decomposition import PCA
+from sklearn.decomposition import TruncatedSVD
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 from typeguard import typechecked
 
 
@@ -19,10 +20,12 @@ def main(
     file_path_pre: str,
     file_path_post: str,
     pca_n_components: int,
+    seed: int = 42,
 ) -> 0:
     pipe = make_pipeline(
-        # PCA(n_components=pca_n_components, svd_solver="arpack"),
-        RandomForestClassifier(class_weight="balanced"),
+        StandardScaler(with_mean=False),
+        TruncatedSVD(n_components=pca_n_components, random_state=seed),
+        RandomForestClassifier(class_weight="balanced", random_state=seed),
     )
     master = scanpy.read_h5ad(master_path)
     data = scanpy.read_h5ad(read_path)
@@ -51,8 +54,6 @@ def main(
     master_gene_ix = np.array(
         [np.where(gene == master.var.gene_name)[0] for gene in joint_genes]
     ).squeeze()
-    print(data_gene_ix.shape)
-    print(master_gene_ix.shape)
     data = data[:, data_gene_ix]
     master = master[:, master_gene_ix]
 

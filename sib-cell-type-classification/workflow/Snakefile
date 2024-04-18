@@ -1,50 +1,62 @@
 from snakemake.utils import min_version
 
 min_version("7.30.1")
+
+
 configfile: "config/config_deploy.yaml"
+
+
 container: config["mambaforge_container_version"]
 
-TRAIN_SAMPLES = [
-    "train_head_dmelanogaster_unit",
-]
 
-TEST_SAMPLES = [
-    "deploy_head_dmelanogaster_unit"
-]
+TRAIN_SAMPLES = ["train_head_dmelanogaster_unit"]
+
+TEST_SAMPLES = ["deploy_head_dmelanogaster_unit"]
+
 
 rule all:
     input:
-        (expand("results/preprocess_train/{sample}.h5ad", sample=TRAIN_SAMPLES) #+ +
+        (
+            expand("results/preprocess_train/{sample}.h5ad", sample=TRAIN_SAMPLES)
+            + [
+                (f"results/train_batch_correct/{'_'.join(sample .rsplit('_')[1:])}")
+                for sample in TRAIN_SAMPLES
+            ]
+            + [
+                (
+                    f"results/train_model/{'_'.join(sample .rsplit('_')[1:])}_leaf_node_model.pkl"
+                )
+                for sample in TRAIN_SAMPLES
+            ]
+            + [
+                (
+                    f"results/deploy_batch_correct/embedding_{'_'.join(sample .rsplit('_')[1:])}.csv"
+                )
+                for sample in TEST_SAMPLES
+            ]
+            + [
+                (f"results/deploy_model/path_{'_'.join(sample .rsplit('_')[1:])}.json")
+                for sample in TEST_SAMPLES
+            ]
+        ),
 
-        + [ (f"results/train_batch_correct/{'_'.join(sample .rsplit('_')[1:])}")
-            for sample in TRAIN_SAMPLES
-        ]
-        + [ (f"results/train_model/{'_'.join(sample .rsplit('_')[1:])}_leaf_node_model.pkl")
-            for sample in TRAIN_SAMPLES
-        ]
-
-        + [ (f"results/deploy_batch_correct/embedding_{'_'.join(sample .rsplit('_')[1:])}.csv")
-            for sample in TEST_SAMPLES
-        ]
-        +  [ (f"results/deploy_model/path_{'_'.join(sample .rsplit('_')[1:])}.json")
-            for sample in TEST_SAMPLES
-        ]
-        )
 
 rule preprocess_train:
     input:
-        read_path="data/train_{tissue}_{organism}_{misc}.h5ad"
+        read_path="data/train_{tissue}_{organism}_{misc}.h5ad",
     output:
-        save_path="results/preprocess_train/train_{tissue}_{organism}_{misc}.h5ad"
+        save_path="results/preprocess_train/train_{tissue}_{organism}_{misc}.h5ad",
     params:
-        organism=lambda wc: f"{wc.get("organism")}",
+        organism=lambda wc: f"{wc.get('organism')}",
         gene_id_column=config["gene_id_column"],
         batch_column=config["batch_column"],
         min_genes=config["min_genes"],
         min_cells=config["min_cells"],
         n_genes_by_counts_upper=config["n_genes_by_counts_upper"],
         pct_counts_mt_upper=config["pct_counts_mt_upper"],
-        cell_cycle_genes_reference=lambda wc: config[f"cell_cycle_genes_reference_{wc.get('organism')}"],
+        cell_cycle_genes_reference=lambda wc: config[
+            f"cell_cycle_genes_reference_{wc.get('organism')}"
+        ],
         filter_hvg=bool(config["filter_hvg"]),
         filter_hvg_n=config["filter_hvg_n"],
         target_column=config["target_column"],
@@ -53,12 +65,13 @@ rule preprocess_train:
         doublet_column=config["doublet_column"],
         doublet_value=config["doublet_value"],
         use_index_barcode=config["use_index_barcode"],
-        barcode_column=config["barcode_column"]
-
-    log: stdout="logs/preprocess_train/train_{tissue}_{organism}_{misc}.stdout", stderr="logs/preprocess_train/train_{tissue}_{organism}_{misc}.stderr"
+        barcode_column=config["barcode_column"],
+    log:
+        stdout="logs/preprocess_train/train_{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/preprocess_train/train_{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/preprocess.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/preprocess.py \
             --read_path {input.read_path} \
@@ -82,20 +95,23 @@ rule preprocess_train:
             --barcode_column {params.barcode_column} > {log.stdout} 2> {log.stderr}
         """
 
+
 rule preprocess_deploy:
     input:
-        read_path="data/deploy_{tissue}_{organism}_{misc}.h5ad"
+        read_path="data/deploy_{tissue}_{organism}_{misc}.h5ad",
     output:
-        save_path="results/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.h5ad"
+        save_path="results/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.h5ad",
     params:
-        organism=lambda wc: f"{wc.get("organism")}",
+        organism=lambda wc: f"{wc.get('organism')}",
         gene_id_column=config["gene_id_column_deploy"],
         batch_column=config["batch_column_deploy"],
         min_genes=config["min_genes"],
         min_cells=config["min_cells"],
         n_genes_by_counts_upper=config["n_genes_by_counts_upper"],
         pct_counts_mt_upper=config["pct_counts_mt_upper"],
-        cell_cycle_genes_reference=lambda wc: config[f"cell_cycle_genes_reference_{wc.get('organism')}"],
+        cell_cycle_genes_reference=lambda wc: config[
+            f"cell_cycle_genes_reference_{wc.get('organism')}"
+        ],
         filter_hvg=bool(config["filter_hvg"]),
         filter_hvg_n=config["filter_hvg_n"],
         target_column="",
@@ -104,11 +120,13 @@ rule preprocess_deploy:
         doublet_column=config["doublet_column_deploy"],
         doublet_value=config["doublet_value_deploy"],
         use_index_barcode=config["use_index_barcode_deploy"],
-        barcode_column=config["barcode_column_deploy"]
-    log: stdout="logs/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.stdout", stderr="logs/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.stderr"
+        barcode_column=config["barcode_column_deploy"],
+    log:
+        stdout="logs/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/preprocess.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/preprocess.py \
             --read_path {input.read_path} \
@@ -134,10 +152,10 @@ rule preprocess_deploy:
 
 rule train_batch_correct:
     input:
-        data_path="results/preprocess_train/train_{tissue}_{organism}_{misc}.h5ad"
+        data_path="results/preprocess_train/train_{tissue}_{organism}_{misc}.h5ad",
     output:
         model_path=directory("results/train_batch_correct/{tissue}_{organism}_{misc}"),
-        embedding_path="results/train_batch_correct/embedding_{tissue}_{organism}_{misc}.h5ad"
+        embedding_path="results/train_batch_correct/embedding_{tissue}_{organism}_{misc}.h5ad",
     params:
         batch_key="batch_id",
         covariate_keys=config["covariate_keys"],
@@ -146,11 +164,13 @@ rule train_batch_correct:
         n_epochs_scvi=config["n_epochs_scvi"],
         n_epochs_scanvi=config["n_epochs_scanvi"],
         label_column="y",
-        seed=config["seed"]
-    log: stdout="logs/train_batch_correct/{tissue}_{organism}_{misc}.stdout", stderr="logs/train_batch_correct/{tissue}_{organism}_{misc}.stderr",
+        seed=config["seed"],
+    log:
+        stdout="logs/train_batch_correct/{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/train_batch_correct/{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/batch_correct.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/batch_correct.py \
             --data_path {input.data_path} \
@@ -166,20 +186,23 @@ rule train_batch_correct:
             --seed {params.seed} > {log.stdout} 2> {log.stderr}
         """
 
+
 rule deploy_batch_correct:
     input:
         data_path="results/preprocess_deploy/deploy_{tissue}_{organism}_{misc}.h5ad",
-        model_path="results/train_batch_correct/{tissue}_{organism}_{misc}"
+        model_path="results/train_batch_correct/{tissue}_{organism}_{misc}",
     output:
-        embedding_path="results/deploy_batch_correct/embedding_{tissue}_{organism}_{misc}.csv"
+        embedding_path="results/deploy_batch_correct/embedding_{tissue}_{organism}_{misc}.csv",
     params:
         seed=config["seed"],
         check_val_every_n_epoch=config["check_val_every_n_epoch_deploy_batch"],
-        max_epochs=config["max_epochs_deploy_batch"]
-    log: stdout="logs/deploy_batch_correct/{tissue}_{organism}_{misc}.stdout", stderr="logs/deploy_batch_correct/{tissue}_{organism}_{misc}.stderr",
+        max_epochs=config["max_epochs_deploy_batch"],
+    log:
+        stdout="logs/deploy_batch_correct/{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/deploy_batch_correct/{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/batch_correct.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/batch_correct_inference.py \
             --data_path {input.data_path} \
@@ -190,9 +213,10 @@ rule deploy_batch_correct:
             --seed {params.seed} > {log.stdout} 2> {log.stderr}
         """
 
+
 rule train_model:
     input:
-        data_path="results/train_batch_correct/embedding_{tissue}_{organism}_{misc}.h5ad"
+        data_path="results/train_batch_correct/embedding_{tissue}_{organism}_{misc}.h5ad",
     output:
         model_path_leaf_nodes="results/train_model/{tissue}_{organism}_{misc}_leaf_node_model.pkl",
         model_path_non_leaf_nodes="results/train_model/{tissue}_{organism}_{misc}_non_leaf_node_model.pkl",
@@ -200,12 +224,13 @@ rule train_model:
     params:
         hierarchy_path=config["hierarchy_path"],
         label_key="y",
-        seed=config["seed"]
-
-    log: stdout="logs/train_model/{tissue}_{organism}_{misc}.stdout", stderr="logs/train_model/{tissue}_{organism}_{misc}.stderr",
+        seed=config["seed"],
+    log:
+        stdout="logs/train_model/{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/train_model/{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/train_model.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/train.py \
             --data_path {input.data_path} \
@@ -216,6 +241,7 @@ rule train_model:
             --label_key {params.label_key} \
             --seed {params.seed} > {log.stdout} 2> {log.stderr}
         """
+
 
 rule deploy_model:
     input:
@@ -228,12 +254,15 @@ rule deploy_model:
         output_path_tsv="results/deploy_model/matrix_{tissue}_{organism}_{misc}.tsv",
     params:
         hierarchy_path=config["hierarchy_path"],
-        thresh=lambda wc: config["thresh"][f"{wc.get('organism')}"][f"{wc.get('tissue')}"]
-
-    log: stdout="logs/deploy_model/{tissue}_{organism}_{misc}.stdout", stderr="logs/deploy_model/{tissue}_{organism}_{misc}.stderr"
+        thresh=lambda wc: config["thresh"][f"{wc.get('organism')}"][
+            f"{wc.get('tissue')}"
+        ],
+    log:
+        stdout="logs/deploy_model/{tissue}_{organism}_{misc}.stdout",
+        stderr="logs/deploy_model/{tissue}_{organism}_{misc}.stderr",
     conda:
         "envs/train_model.yaml"
-    shell: 
+    shell:
         """
         python workflow/scripts/predict_inference.py \
             --data_path {input.data_path} \
