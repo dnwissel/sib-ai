@@ -1,0 +1,14 @@
+name: preprocess
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - anndata=0.8.0
+  - pandas=2.2.1
+  - typeguard=4.1.5
+  - pip
+  - scvi-tools=1.1.2
+
+  - pip:
+      - scanpy==1.9.8
