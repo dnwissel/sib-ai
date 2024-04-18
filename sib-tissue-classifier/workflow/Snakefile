@@ -1,0 +1,56 @@
+from snakemake.utils import min_version
+
+min_version("7.30.1")
+
+
+configfile: "config/config_deploy.yaml"
+
+
+container: config["mambaforge_container_version"]
+
+
+SAMPLES = ["deploy_unknown_dmelanogaster_unit"]
+
+
+rule all:
+    input:
+        expand("results/decide_tissue/{sample}", sample=SAMPLES),
+
+
+rule decide_unknown_tissue:
+    input:
+        read_path="data/deploy_unknown_{organism}_{misc}.h5ad",
+        master_path="data/{organism}_master.h5ad",
+    output:
+        save_path=directory("results/decide_tissue/deploy_unknown_{organism}_{misc}"),
+    params:
+        organism="{organism}",
+        master_tissue_column=config["master_tissue_column"],
+        master_gene_column=config["master_gene_column"],
+        deploy_decide_gene_column=config["deploy_decide_gene_column"],
+        file_path_pre="results/decide_tissue/deploy/deploy_",
+        file_path_post="_{organism}_{misc}",
+        pca_n_components=config["pca_n_components"],
+    log:
+        stdout="logs/decide_tissue/{organism}_{misc}.stdout",
+        stderr="logs/decide_tissue/{organism}_{misc}.stderr",
+    conda:
+        "envs/train_model.yaml"
+    shell:
+        """
+        export OMP_NUM_THREADS=1;
+        export OPENBLAS_NUM_THREADS=1;
+        export MKL_NUM_THREADS=1;
+        export VECLIB_MAXIMUM_THREADS=1;
+        export NUMEXPR_NUM_THREADS=1;
+        mkdir {output.save_path};
+        python workflow/scripts/decide_tissue.py \
+            --read_path {input.read_path} \
+            --master_path {input.master_path} \
+            --master_tissue_column {params.master_tissue_column} \
+            --master_gene_column {params.master_gene_column} \
+            --deploy_decide_gene_column {params.deploy_decide_gene_column} \
+            --file_path_pre {params.file_path_pre} \
+            --file_path_post {params.file_path_post} \
+            --pca_n_components {params.pca_n_components} > {log.stdout} 2> {log.stderr}
+        """

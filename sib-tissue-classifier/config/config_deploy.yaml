@@ -1,0 +1,5 @@
+mambaforge_container_version: "docker://condaforge/mambaforge:23.1.0-3"
+master_tissue_column: "asap_tissue"
+master_gene_column: "gene_name"
+deploy_decide_gene_column: "index"
+pca_n_components: 64
