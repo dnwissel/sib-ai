@@ -3,7 +3,6 @@ import argparse
 import joblib
 import networkx as nx
 import numpy as np
-import obonet
 import pandas as pd
 import scanpy
 from sklearn.feature_selection import VarianceThreshold
@@ -26,13 +25,6 @@ def load_full_hier(path: str):
         roots_label += ["root"]
     G.add_edge("root", "FBbt:00005073")
     return G, roots_label
-
-
-# @typechecked
-# def load_full_hier(path: str):
-#     G = obonet.read_obo(path)
-#     G = nx.DiGraph(G)
-#     return G
 
 
 class MultiLabelLogReg(LogisticRegression):
@@ -59,6 +51,11 @@ def main(
     hierarchy_path: str,
     seed: int,
     label_key: str,
+    n_jobs: int = 1,
+    C: float = 100.0,
+    tol: float = 0.01,
+    class_weight: str = "balanced",
+    max_iter: int = 5000,
 ) -> int:
     mlb = MultiLabelBinarizer()
     data = scanpy.read_h5ad(data_path)
@@ -68,22 +65,20 @@ def main(
     y_multi_label = [
         tuple(set(nx.ancestors(hierarchy, node)).union(set([node]))) for node in y
     ]
+
     y_multi_label = mlb.fit_transform(y_multi_label)
-    # print(np.sum(y_multi_label, axis=1).shape)
-    # print(np.sum(np.sum(y_multi_label, axis=1) == 0.0))
-    # print(y_multi_label.shape)
-    # raise ValueError
 
     leaf_node_pipeline = make_pipeline(
         VarianceThreshold(),
         StandardScaler(),
         LogisticRegression(
-            class_weight="balanced",
+            class_weight=class_weight,
             random_state=seed,
+            # Irrelevant when `multi_class`==`multinomial`
             n_jobs=1,
-            max_iter=5000,
-            tol=0.01,
-            C=100.0,
+            max_iter=max_iter,
+            tol=tol,
+            C=C,
         ),
     )
     non_leaf_node_pipeline = make_pipeline(
@@ -91,13 +86,15 @@ def main(
         StandardScaler(),
         MultiOutputClassifier(
             estimator=MultiLabelLogReg(
-                class_weight="balanced",
+                class_weight=class_weight,
                 random_state=seed,
-                max_iter=5000,
-                tol=0.01,
-                C=100.0,
+                max_iter=max_iter,
+                tol=tol,
+                C=C,
+                # Nothing to parallelize on the inside
+                n_jobs=1,
             ),
-            n_jobs=1,
+            n_jobs=n_jobs,
         ),
     )
 
@@ -155,6 +152,36 @@ if __name__ == "__main__":
         help="Initial state of the pseudo-random number generator.",
     )
 
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        help="How many threads to parallelize over when fitting the per-node classifiers.",
+    )
+
+    parser.add_argument(
+        "--C",
+        type=float,
+        help="Inverse regularization parameter for `sklearn.linear_model.LogisticRegression`.",
+    )
+
+    parser.add_argument(
+        "--tol",
+        type=float,
+        help="Convergence tolerance parameter for `sklearn.linear_model.LogisticRegression`.",
+    )
+
+    parser.add_argument(
+        "--class_weight",
+        type=str,
+        help="Class weight parameter for `sklearn.linear_model.LogisticRegression`.",
+    )
+
+    parser.add_argument(
+        "--max_iter",
+        type=float,
+        help="Max iteration parameter for `sklearn.linear_model.LogisticRegression`.",
+    )
+
     args = parser.parse_args()
     main(
         data_path=args.data_path,
@@ -164,4 +191,9 @@ if __name__ == "__main__":
         hierarchy_path=args.hierarchy_path,
         label_key=args.label_key,
         seed=args.seed,
+        n_jobs=args.n_jobs,
+        C=args.C,
+        tol=args.tol,
+        class_weight=args.class_weight,
+        max_iter=args.max_iter,
     )

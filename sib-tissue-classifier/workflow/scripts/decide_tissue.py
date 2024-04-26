@@ -17,9 +17,8 @@ def main(
     master_tissue_column: str,
     master_gene_column: str,
     deploy_decide_gene_column: str,
-    file_path_pre: str,
-    file_path_post: str,
     pca_n_components: int,
+    save_path: str,
     seed: int = 42,
 ) -> 0:
     pipe = make_pipeline(
@@ -62,8 +61,8 @@ def main(
     selected_tissue = np.unique(selected_tissue, return_counts=True)[0][
         np.argmax(np.unique(selected_tissue, return_counts=True)[1])
     ]
-    file_path = file_path_pre + str(selected_tissue[0]) + file_path_post + ".h5ad"
-    data.write(file_path)
+    data.obs["tissue"] = selected_tissue
+    data.write(save_path)
     return 0
 
 
@@ -103,21 +102,21 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--file_path_pre",
-        type=str,
-        help="Prefix of the output path.",
-    )
-
-    parser.add_argument(
-        "--file_path_post",
-        type=str,
-        help="Postfix of the output path.",
-    )
-
-    parser.add_argument(
         "--pca_n_components",
         type=int,
         help="Number of components to run PCA with.",
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed.",
+    )
+
+    parser.add_argument(
+        "--save_path",
+        type=str,
+        help="Path to write the h5ad to with tissue obs set.",
     )
 
     args = parser.parse_args()
@@ -127,7 +126,7 @@ if __name__ == "__main__":
         master_tissue_column=args.master_tissue_column,
         master_gene_column=args.master_gene_column,
         deploy_decide_gene_column=args.deploy_decide_gene_column,
-        file_path_pre=args.file_path_pre,
-        file_path_post=args.file_path_post,
         pca_n_components=args.pca_n_components,
+        seed=args.seed,
+        save_path=args.save_path,
     )

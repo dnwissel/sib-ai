@@ -5,7 +5,6 @@ from operator import itemgetter
 import joblib
 import networkx as nx
 import numpy as np
-import obonet
 import pandas as pd
 from quadprog import solve_qp
 from sklearn.linear_model import LogisticRegression
@@ -24,12 +23,6 @@ def load_full_hier(path: str):
         roots_label += ["root"]
     G.add_edge("root", "FBbt:00005073")
     return G, roots_label
-
-
-# @typechecked
-# def load_full_hier(path: str):
-#     G = obonet.read_obo(path)
-#     return G
 
 
 class MultiLabelLogReg(LogisticRegression):

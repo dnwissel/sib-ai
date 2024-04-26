@@ -1,5 +1,6 @@
 import argparse
 import logging
+import pathlib
 import random
 import warnings
 from typing import Optional
@@ -83,13 +84,11 @@ def main(
     doublet_value: Optional[str] = None,
     use_index_barcode: bool = True,
     barcode_column: Optional[str] = None,
+    attrname: Optional[str] = None,
 ) -> int:
-
     data = ad.read_h5ad(read_path)
-    print(data)
     if doublet_column is not None and doublet_value is not None:
         data = data[data.obs[doublet_column].values != doublet_value, :]
-    print(data)
     if use_index_barcode:
         data.obs["cell_id"] = data.obs.index
         data.obs.reset_index(drop=True, inplace=True)
@@ -139,15 +138,7 @@ def main(
         f"Filtered out {len(filtered_genes_all)} genes that are not expressed in at least {min_cells} cells in every batch."
     )
     data = data[:, filtered_genes_all]
-    print("HEYOOOO")
     logging.info(f"data.shape: {data.shape}")
-
-    # Identify mitonchondrial genes
-    if not use_gene_id:
-        if organism == "dmelanogaster":
-            attrname = "external_gene_name"
-        elif organism == "hsapiens":
-            attrname = "hgnc_symbol"
 
     mt_gene_id = sc.queries.mitochondrial_genes(
         organism,
@@ -344,6 +335,14 @@ if __name__ == "__main__":
         default=None,
     )
 
+    parser.add_argument(
+        "--attrname",
+        type=nullable_string,
+        nargs="?",
+        help="Biomart attribute field to return if gene ids are not used (otherwise this does not have to be set). See https://scanpy.readthedocs.io/en/stable/generated/scanpy.queries.mitochondrial_genes.html for details. Typically `external_gene_name` for drosophila and `hgnc_symbol` for other species.",
+        default=None,
+    )
+
     args = parser.parse_args()
     main(
         read_path=args.read_path,
@@ -365,4 +364,5 @@ if __name__ == "__main__":
         doublet_value=args.doublet_value,
         use_index_barcode=args.use_index_barcode,
         barcode_column=args.barcode_column,
+        attrname=args.attrname,
     )

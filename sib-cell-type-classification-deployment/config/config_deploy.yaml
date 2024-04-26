@@ -1,38 +1,21 @@
-gene_id_column: "gene_name"
-batch_column: "batch"
 min_genes: 0
 min_cells: 0
 n_genes_by_counts_upper: 10000
 pct_counts_mt_upper: 5.0
-cell_cycle_genes_reference_dmelanogaster: "./data/Drosophila_melanogaster_names.csv"
+cell_cycle_genes_reference: "./data/Drosophila_melanogaster_names.csv"
 filter_hvg: false
 filter_hvg_n: 5000
 mambaforge_container_version: "docker://condaforge/mambaforge:23.1.0-3"
 covariate_keys: ["pct_counts_mt", "cell_cycle_diff"]
-n_latent: 30
-n_layers: 2
-n_epochs_scvi: 100
-n_epochs_scanvi: 25
 seed: 42
 hierarchy_path: "./data/sib_cell_type_hierarchy.tsv"
 check_val_every_n_epoch_deploy_batch: 10
 max_epochs_deploy_batch: 100
-thresh:
-  dmelanogaster:
-    antenna: 0.5
-    head: 0.5
-
-target_column: "cellTypeId"
+thresh: 0.5
 use_gene_id: false
 na_string: "NA"
-doublet_column: "scrublet_call"
-doublet_value: "1.0"
-use_index_barcode: false
-barcode_column: "barcodes"
-
 use_index_barcode_deploy: true
 barcode_column_deploy: ""
-
 doublet_column_deploy: ""
 doublet_value_deploy: ""
 gene_id_column_deploy: ""
