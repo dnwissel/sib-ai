@@ -1,15 +1,31 @@
 # Cell-type classification tools for the SIB AI project
 
-## Execution
-The only dependencies are snakemake (>= 7.30.1) and singularity. Afterwards, you can run both the tissue annotator and the cell type classification using:
+## Example use case
+Please find a tarball containing full example data on [Zenodo](TODO-Sunday). The example use case trains a head tissue model based on FCA data and deploy it one dataset known to contain cells coming from head tissue and one dataset predicted to come from head tissue.
 
-```sh
-snakemake --use-conda --use-singularity
+The example use case only has four dependencies:
+
+```
+scanpy
+singularity
+typeguard
+snakemake
 ```
 
-All configuration happens in each respective workflow's config.yaml file. Most of the parameters are hopefully self-documenting, although the command line args in each Python script should usually also have somewhat useful help messages.
+You may reproduce the example use case by executing the following command in the root directory of the tarball.
 
-Just let me know if you would like more documentation in any part of this repo.
+```
+bash deploy.sh
+```
 
-## Limitations
-- The tissue has only been tested in a very limited manner on FCA data. It is also rather slow so if this is a common task, we should rediscuss the model that we're using and/or how we're applying it.
+## Documentation
+For documentation, please see the README files within each of the lorem:
+
+- [Training](https://github.com/dnwissel/sib-ai/sib-cell-type-classification-training/README.md)
+- [Deployment](https://github.com/dnwissel/sib-ai/sib-cell-type-classification-deployment/README.md)
+- [Tissue classification](https://github.com/dnwissel/sib-ai/sib-tissue-classifier/README.md)
+
+A short writeup about lessons learned throughout the project may be accessed [here](https://github.com/dnwissel/sib-ai/lessons_learned.md).
+
+## Questions and issues
+In case you have any questions, please get in touch via email (dwissel@ethz.ch) or feel free to open an issue. Thanks!
