@@ -75,8 +75,8 @@ rule train_batch_correct:
     input:
         data_path=config["output_preprocessed_h5ad"],
     output:
-        model_path=config["output_batch_model_dir"],
-        embedding_path=directory(config["output_embedding_path"]),
+        model_path=directory(config["output_batch_model_dir"]),
+        embedding_path=config["output_embedding_path"],
     params:
         batch_key="batch_id",
         covariate_keys=config["covariate_keys"],
