@@ -1,7 +1,8 @@
 # Cell-type classification tools for the SIB AI project
 
 ## Example use case
-Please find a tarball containing full example data on [Zenodo](TODO-Sunday). The example use case trains a head tissue model based on FCA data and deploy it one dataset known to contain cells coming from head tissue and one dataset predicted to come from head tissue.
+
+Please find a tarball containing full example data on [Zenodo](https://zenodo.org/records/11098655). The example use case trains a head tissue model based on FCA data and deploy it one dataset known to contain cells coming from head tissue and one dataset predicted to come from head tissue.
 
 The example use case only has four dependencies:
 
